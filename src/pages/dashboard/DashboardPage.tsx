@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { format, subDays, isAfter } from 'date-fns';
+import { format, subDays, isAfter, differenceInYears } from 'date-fns';
 import {
   UtensilsCrossed,
   Dumbbell,
@@ -16,6 +16,7 @@ import { useNutritionStore } from '@/stores/nutrition-store';
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useProgressStore } from '@/stores/progress-store';
 import { Card, ProgressRing, MacroBar, Button } from '@/components/ui';
+import CardioSuggestions from '@/components/CardioSuggestions';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -65,11 +66,16 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 3);
 
+  const remainingCalories = Math.max(0, Math.round(targetCalories - todaySummary.calories));
+  const userAge = profile?.birthDate
+    ? differenceInYears(new Date(), new Date(profile.birthDate))
+    : 25;
+
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       {/* ── Welcome Header ──────────────────────────────────────── */}
-      <div>
+      <div className="animate-fade-in-down">
         <h1 className="text-2xl font-bold text-white sm:text-3xl">
           Welcome back, {firstName}
         </h1>
@@ -79,7 +85,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Top Grid: Calorie Ring + Macros ─────────────────────── */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="animate-fade-in-up grid gap-6 lg:grid-cols-3" style={{ animationDelay: '0.1s' }}>
         {/* Calorie Ring Card */}
         <Card className="flex flex-col items-center justify-center gap-4 py-8 lg:col-span-1">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-dark-300">
@@ -139,7 +145,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Quick Actions ───────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="stagger-children grid gap-4 sm:grid-cols-3">
         <Card
           className="flex flex-col items-center gap-3 py-6"
           onClick={() => navigate('/nutrition')}
@@ -171,8 +177,30 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* ── Cardio Suggestions ─────────────────────────────────── */}
+      {profile && remainingCalories > 0 ? (
+        <CardioSuggestions
+          caloriesToBurn={remainingCalories}
+          weightKg={currentWeight > 0 ? currentWeight : 70}
+          age={userAge}
+          gender={profile.gender}
+        />
+      ) : profile && remainingCalories <= 0 ? (
+        <Card className="animate-fade-in-up flex items-center gap-3 py-5">
+          <span className="text-3xl">{'\u{1F389}'}</span>
+          <div>
+            <p className="text-base font-bold text-white">
+              Congratulations!
+            </p>
+            <p className="text-sm text-dark-300">
+              You've reached your calorie target for today. Great job!
+            </p>
+          </div>
+        </Card>
+      ) : null}
+
       {/* ── Stats Row ───────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="stagger-children grid gap-4 sm:grid-cols-3">
         {/* BMI */}
         <Card className="flex items-center gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-dark-700">
@@ -231,7 +259,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Recent Activity ─────────────────────────────────────── */}
-      <Card>
+      <Card className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-dark-300">
             Recent Activity

@@ -367,7 +367,7 @@ export default function OnboardingPage() {
           <span>Step {currentStep} of {TOTAL_STEPS}</span>
           <span>{Math.round(progressPercent)}%</span>
         </div>
-        <div className="mb-8 h-2 w-full overflow-hidden rounded-full bg-dark-800">
+        <div className="mb-8 h-2 w-full overflow-hidden rounded-full bg-dark-800 animate-scale-in">
           <div
             className="h-full rounded-full bg-primary-500 transition-all duration-300"
             style={{ width: `${progressPercent}%` }}
@@ -380,7 +380,7 @@ export default function OnboardingPage() {
         </h1>
 
         {/* Step content */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-in" key={currentStep}>
           {currentStep === 1 && <StepName form={nameForm} />}
           {currentStep === 2 && (
             <StepGender

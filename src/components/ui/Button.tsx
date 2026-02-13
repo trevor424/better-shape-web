@@ -44,8 +44,9 @@ export default function Button({
       disabled={disabled || loading}
       className={`
         inline-flex items-center justify-center gap-2
-        rounded-xl font-semibold transition-colors
+        rounded-xl font-semibold transition-all duration-200
         disabled:opacity-50 disabled:cursor-not-allowed
+        active:scale-95
         ${variantClasses[variant]}
         ${sizeClasses[size]}
         ${fullWidth ? 'w-full' : ''}

@@ -37,7 +37,7 @@ export default function MainLayout() {
   return (
     <div className="flex min-h-screen">
       {/* ── Sidebar ──────────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-dark-900">
+      <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-dark-900 animate-slide-in-left">
         {/* Logo */}
         <div className="flex h-16 items-center px-6">
           <span className="text-xl font-bold tracking-tight text-primary-500">
@@ -54,7 +54,7 @@ export default function MainLayout() {
               end={'end' in rest ? rest.end : false}
               className={({ isActive }) =>
                 [
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-1',
                   isActive
                     ? 'border-l-3 border-primary-500 bg-primary-500/10 text-primary-400'
                     : 'text-dark-300 hover:bg-dark-800 hover:text-white',

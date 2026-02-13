@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { format, addDays, subDays, parseISO } from 'date-fns';
+import { format, addDays, subDays, parseISO, differenceInYears } from 'date-fns';
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,6 +17,7 @@ import { useNutritionStore } from '@/stores/nutrition-store';
 import { useUserStore } from '@/stores/user-store';
 import { foods } from '@/data/foods';
 import type { FoodItem, MealType, DietType } from '@/types';
+import { minutesToBurnCalories, CARDIO_ACTIVITIES } from '@/lib/cardio-calculator';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -156,6 +157,7 @@ function DailyLogTab({ onAddFood }: { onAddFood: (mealType: MealType) => void })
   const getDailySummary = useNutritionStore((s) => s.getDailySummary);
   const removeMealLog = useNutritionStore((s) => s.removeMealLog);
   const healthMetrics = useUserStore((s) => s.healthMetrics);
+  const profile = useUserStore((s) => s.profile);
 
   const targetCalories = healthMetrics?.targetCalories ?? DEFAULT_CALORIES;
   const macroTargets = healthMetrics?.macros ?? DEFAULT_MACROS;
@@ -164,6 +166,23 @@ function DailyLogTab({ onAddFood }: { onAddFood: (mealType: MealType) => void })
   const entries = dailyLogs[selectedDate] ?? [];
 
   const calorieProgress = targetCalories > 0 ? summary.calories / targetCalories : 0;
+  const remainingCalories = Math.max(0, Math.round(targetCalories - summary.calories));
+
+  // Cardio suggestion data
+  const walkingActivity = CARDIO_ACTIVITIES.find((a) => a.id === 'walking')!;
+  const runningActivity = CARDIO_ACTIVITIES.find((a) => a.id === 'running')!;
+  const userWeight = profile?.weightKg ?? 70;
+  const userAge = profile?.birthDate
+    ? differenceInYears(new Date(), new Date(profile.birthDate))
+    : 25;
+  const userGender = profile?.gender ?? 'male';
+
+  const walkMinutes = remainingCalories > 0
+    ? minutesToBurnCalories(remainingCalories, walkingActivity, userWeight, userAge, userGender)
+    : 0;
+  const runMinutes = remainingCalories > 0
+    ? minutesToBurnCalories(remainingCalories, runningActivity, userWeight, userAge, userGender)
+    : 0;
 
   const dateObj = parseISO(selectedDate);
   const formattedDate = format(dateObj, 'EEE, MMM d');
@@ -239,6 +258,20 @@ function DailyLogTab({ onAddFood }: { onAddFood: (mealType: MealType) => void })
           />
         </div>
       </Card>
+
+      {/* Compact cardio suggestion */}
+      {remainingCalories > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border border-dark-800 bg-dark-900 px-4 py-3">
+          <span className="text-lg">{'\u{1F525}'}</span>
+          <p className="text-sm text-dark-300">
+            <span className="font-medium text-white">Walk for {walkMinutes} min</span>
+            {' or '}
+            <span className="font-medium text-white">Run for {runMinutes} min</span>
+            {' to burn remaining '}
+            <span className="font-semibold text-primary-400">{remainingCalories} kcal</span>
+          </p>
+        </div>
+      )}
 
       {/* Meal sections */}
       {MEAL_TYPES.map((mealType) => {
