@@ -39,7 +39,12 @@ export default function MainLayout() {
       {/* ── Sidebar ──────────────────────────────────────────────── */}
       <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-dark-900 animate-slide-in-left">
         {/* Logo */}
-        <div className="flex h-16 items-center px-6">
+        <div className="flex h-16 items-center gap-3 px-6">
+          <img
+            src={import.meta.env.BASE_URL + 'favicon.png'}
+            alt="BetterShape"
+            className="h-9 w-9"
+          />
           <span className="text-xl font-bold tracking-tight text-primary-500">
             BetterShape
           </span>

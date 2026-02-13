@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, UserCircle } from 'lucide-react';
+import { UserCircle } from 'lucide-react';
 
 import { Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
@@ -67,9 +67,11 @@ export default function RegisterPage() {
       <div className="w-full max-w-md rounded-2xl bg-dark-900 p-8 shadow-xl animate-scale-in">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-500/15">
-            <UserPlus className="h-7 w-7 text-primary-500" />
-          </div>
+          <img
+            src={import.meta.env.BASE_URL + 'favicon.png'}
+            alt="BetterShape"
+            className="mx-auto mb-4 h-20 w-20 animate-float"
+          />
           <h1 className="text-2xl font-bold text-white">Create Account</h1>
           <p className="mt-1 text-sm text-dark-300">
             Start your fitness journey today
