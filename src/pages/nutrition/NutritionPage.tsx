@@ -690,13 +690,52 @@ function generateMealPlan(
   return plan;
 }
 
+const DIET_DESCRIPTIONS: Record<DietType, { emoji: string; tagline: string; macros: string; details: string }> = {
+  balanced: {
+    emoji: '\u2696\uFE0F',
+    tagline: 'A well-rounded approach for overall health',
+    macros: '45% Carbs \u2022 30% Protein \u2022 25% Fat',
+    details: 'Includes a mix of all food groups. Great for general fitness and sustainable long-term eating.',
+  },
+  low_carb: {
+    emoji: '\uD83E\uDD57',
+    tagline: 'Reduced carbs for steady energy and fat loss',
+    macros: '20% Carbs \u2022 35% Protein \u2022 45% Fat',
+    details: 'Emphasizes proteins, healthy fats, and vegetables. Helps reduce insulin spikes and promotes fat burning.',
+  },
+  high_protein: {
+    emoji: '\uD83D\uDCAA',
+    tagline: 'Maximize muscle growth and recovery',
+    macros: '35% Carbs \u2022 40% Protein \u2022 25% Fat',
+    details: 'High protein intake supports muscle repair and growth. Ideal for active individuals and strength training.',
+  },
+  keto: {
+    emoji: '\uD83E\uDD51',
+    tagline: 'Very low carb, high fat for ketosis',
+    macros: '5% Carbs \u2022 25% Protein \u2022 70% Fat',
+    details: 'Puts your body into ketosis for efficient fat burning. Focuses on fats, moderate protein, and minimal carbs.',
+  },
+};
+
 function MealPlanTab() {
   const healthMetrics = useUserStore((s) => s.healthMetrics);
+  const profile = useUserStore((s) => s.profile);
+  const updateProfile = useUserStore((s) => s.updateProfile);
   const selectedDate = useNutritionStore((s) => s.selectedDate);
   const addMealLog = useNutritionStore((s) => s.addMealLog);
 
+  const recommendedDiet = healthMetrics?.recommendedDiet ?? 'balanced';
+  const [selectedDiet, setSelectedDiet] = useState<DietType>(
+    profile?.preferredDiet ?? recommendedDiet,
+  );
+
   const targetCalories = healthMetrics?.targetCalories ?? DEFAULT_CALORIES;
-  const dietType = healthMetrics?.recommendedDiet ?? 'balanced';
+  const dietType = selectedDiet;
+
+  function handleDietSelect(diet: DietType) {
+    setSelectedDiet(diet);
+    updateProfile({ preferredDiet: diet });
+  }
 
   const mealPlan = useMemo(
     () => generateMealPlan(targetCalories, dietType),
@@ -734,10 +773,71 @@ function MealPlanTab() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Diet Type Selector */}
+      <Card className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles size={20} className="text-primary-400" />
+            <h2 className="text-lg font-bold text-white">Choose Your Diet</h2>
+          </div>
+          {selectedDiet !== recommendedDiet && (
+            <button
+              onClick={() => handleDietSelect(recommendedDiet)}
+              className="text-xs font-medium text-primary-400 transition-colors hover:text-primary-300"
+            >
+              Use Recommended
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {(Object.keys(DIET_DESCRIPTIONS) as DietType[]).map((diet) => {
+            const info = DIET_DESCRIPTIONS[diet];
+            const isSelected = selectedDiet === diet;
+            const isRecommended = recommendedDiet === diet;
+
+            return (
+              <button
+                key={diet}
+                onClick={() => handleDietSelect(diet)}
+                className={`relative flex flex-col items-center gap-2 rounded-xl p-4 text-center transition-all duration-200 ${
+                  isSelected
+                    ? 'bg-primary-500/15 ring-2 ring-primary-500'
+                    : 'bg-dark-800 hover:bg-dark-700'
+                }`}
+              >
+                {isRecommended && (
+                  <span className="absolute -top-2 right-2 rounded-full bg-primary-500 px-2 py-0.5 text-[9px] font-bold uppercase text-white">
+                    Rec
+                  </span>
+                )}
+                <span className="text-3xl">{info.emoji}</span>
+                <span className={`text-sm font-bold ${isSelected ? 'text-primary-400' : 'text-white'}`}>
+                  {DIET_LABELS[diet]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected diet details */}
+        <div className="animate-fade-in rounded-xl bg-dark-800 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">{DIET_DESCRIPTIONS[selectedDiet].emoji}</span>
+            <div>
+              <h3 className="font-bold text-white">{DIET_LABELS[selectedDiet]} Diet</h3>
+              <p className="text-xs text-primary-400">{DIET_DESCRIPTIONS[selectedDiet].macros}</p>
+            </div>
+          </div>
+          <p className="text-sm text-dark-300">{DIET_DESCRIPTIONS[selectedDiet].tagline}</p>
+          <p className="mt-2 text-xs text-dark-400">{DIET_DESCRIPTIONS[selectedDiet].details}</p>
+        </div>
+      </Card>
+
       {/* Plan header */}
       <Card className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <Sparkles size={20} className="text-primary-400" />
+          <UtensilsCrossed size={20} className="text-primary-400" />
           <h2 className="text-lg font-bold text-white">Today's Meal Plan</h2>
         </div>
         <p className="text-sm text-dark-300">

@@ -50,6 +50,7 @@ export type UserProfile = {
   activityLevel: ActivityLevel;
   goal: FitnessGoal;
   unitSystem: UnitSystem;
+  preferredDiet?: DietType;
   onboardingCompleted: boolean;
   createdAt: string;
   updatedAt: string;
