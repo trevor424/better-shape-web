@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
+import { LogIn, UserCircle } from 'lucide-react';
 
 import { Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
@@ -101,6 +101,31 @@ export default function LoginPage() {
             Sign In
           </Button>
         </form>
+
+        {/* Divider */}
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-dark-700" />
+          <span className="text-xs text-dark-400">or</span>
+          <div className="h-px flex-1 bg-dark-700" />
+        </div>
+
+        {/* Guest button */}
+        <Button
+          variant="outline"
+          size="lg"
+          fullWidth
+          onClick={() => {
+            setAuthenticated('guest-user', 'guest@bettershape.app');
+            if (profile && profile.onboardingCompleted) {
+              navigate('/');
+            } else {
+              navigate('/onboarding');
+            }
+          }}
+        >
+          <UserCircle className="h-5 w-5" />
+          Continue as Guest
+        </Button>
 
         {/* Footer link */}
         <p className="mt-6 text-center text-sm text-dark-300">

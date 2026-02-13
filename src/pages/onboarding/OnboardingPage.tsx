@@ -21,6 +21,7 @@ import {
   TrendingDown,
   Minus,
   TrendingUp,
+  Rocket,
 } from 'lucide-react';
 
 import { Button, Input, Card } from '@/components/ui';
@@ -341,6 +342,38 @@ export default function OnboardingPage() {
     navigate('/');
   }
 
+  function handleQuickStart() {
+    const now = new Date().toISOString();
+    const defaultProfile: UserProfile = {
+      uid: uid ?? 'guest-user',
+      email: email ?? 'guest@bettershape.app',
+      displayName: 'Guest',
+      gender: 'male',
+      birthDate: '1995-01-01',
+      heightCm: 175,
+      weightKg: 75,
+      activityLevel: 'moderate',
+      goal: 'maintain',
+      unitSystem: 'metric',
+      onboardingCompleted: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const metrics = calculateHealthMetrics({
+      weightKg: defaultProfile.weightKg,
+      heightCm: defaultProfile.heightCm,
+      birthDate: defaultProfile.birthDate,
+      gender: defaultProfile.gender,
+      activityLevel: defaultProfile.activityLevel,
+      goal: defaultProfile.goal,
+    });
+
+    setProfile(defaultProfile);
+    setHealthMetrics(metrics);
+    navigate('/');
+  }
+
   // ── Progress bar ──────────────────────────────────────────────────
 
   const progressPercent = (currentStep / TOTAL_STEPS) * 100;
@@ -459,6 +492,24 @@ export default function OnboardingPage() {
             </Button>
           )}
         </div>
+
+        {/* Quick Start option */}
+        {currentStep === 1 && (
+          <div className="mt-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-dark-700" />
+              <span className="text-xs text-dark-400">or</span>
+              <div className="h-px flex-1 bg-dark-700" />
+            </div>
+            <Button variant="ghost" size="md" fullWidth onClick={handleQuickStart}>
+              <Rocket size={18} />
+              Quick Start with Default Profile
+            </Button>
+            <p className="mt-2 text-center text-xs text-dark-400">
+              Skip setup and explore with a sample profile. You can edit it later.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
