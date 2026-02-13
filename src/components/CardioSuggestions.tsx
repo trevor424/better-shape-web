@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Flame, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import { Flame, Heart, ChevronDown, ChevronUp, Timer } from 'lucide-react';
 
 import { Card } from '@/components/ui';
 import {
   CARDIO_ACTIVITIES,
-  getCardioSuggestions,
   caloriesPerMinuteHR,
   caloriesPerMinuteMET,
   getMotivationalTip,
@@ -13,22 +12,13 @@ import type { CardioActivity, CardioActivityInfo } from '@/lib/cardio-calculator
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-function formatDuration(minutes: number): string {
-  if (minutes <= 0) return '0 min';
-  if (minutes < 60) return `${minutes} min`;
-
-  const hours = Math.floor(minutes / 60);
-  const remaining = minutes % 60;
-
-  if (remaining === 0) return `${hours}h`;
-  return `${hours}h ${remaining}min`;
-}
-
 function getHeartRateZone(activity: CardioActivityInfo): string {
   const low = Math.round(activity.avgHeartRate * 0.85);
   const high = Math.round(activity.avgHeartRate * 1.15);
   return `${low} - ${high} BPM`;
 }
+
+const SESSION_SLOTS = [30, 60, 90, 120]; // 30-min increments
 
 // ── Props ─────────────────────────────────────────────────────────
 
@@ -50,10 +40,24 @@ export default function CardioSuggestions({
   const [heartRate, setHeartRate] = useState<number | undefined>(undefined);
   const [expandedActivity, setExpandedActivity] = useState<CardioActivity | null>(null);
 
-  const suggestions = useMemo(
-    () => getCardioSuggestions(caloriesToBurn, weightKg, age, gender, heartRate),
-    [caloriesToBurn, weightKg, age, gender, heartRate],
-  );
+  // Calculate cal/min for each activity
+  const activityData = useMemo(() => {
+    return CARDIO_ACTIVITIES.map((activity) => {
+      const calPerMin = heartRate
+        ? caloriesPerMinuteHR(heartRate, weightKg, age, gender)
+        : caloriesPerMinuteMET(activity.metValue, weightKg);
+
+      const sessions = SESSION_SLOTS.map((minutes) => ({
+        minutes,
+        caloriesBurned: Math.round(calPerMin * minutes),
+      }));
+
+      // Find which 30-min slot covers the target
+      const minutesToTarget = caloriesToBurn > 0 ? Math.ceil(caloriesToBurn / calPerMin) : 0;
+
+      return { activity, calPerMin, sessions, minutesToTarget };
+    });
+  }, [heartRate, weightKg, age, gender, caloriesToBurn]);
 
   const handleCardClick = (activityId: CardioActivity) => {
     setExpandedActivity((prev) => (prev === activityId ? null : activityId));
@@ -82,54 +86,47 @@ export default function CardioSuggestions({
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">
-                Burn Calories With Cardio
+                Cardio Calorie Burn
               </h2>
               <p className="text-sm text-dark-300">
-                Choose an activity to hit your calorie goal
+                Calories burned per 30-min session
               </p>
             </div>
           </div>
         </div>
 
-        {/* Target calories display */}
-        <div className="flex items-center justify-between rounded-xl bg-dark-800 px-4 py-3">
-          <span className="text-sm font-medium text-dark-300">Target to burn</span>
-          <span className="text-2xl font-bold text-primary-400">
-            {Math.round(caloriesToBurn)}{' '}
-            <span className="text-sm font-normal text-dark-400">kcal</span>
-          </span>
-        </div>
-
-        {/* Heart rate input */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
-            <Heart className="h-4 w-4 text-red-400" />
-          </div>
-          <input
-            type="number"
-            placeholder="Enter heart rate (BPM)"
-            min={40}
-            max={250}
-            value={heartRate ?? ''}
-            onChange={handleHeartRateChange}
-            className="h-10 w-full rounded-xl border-2 border-dark-700 bg-dark-800 px-3 text-sm text-white placeholder:text-dark-500 transition-colors focus:border-primary-400 focus:outline-none"
-          />
-          {heartRate && (
-            <span className="shrink-0 text-xs text-primary-400 font-medium">
-              HR mode
+        {/* Target + Heart rate row */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center justify-between rounded-xl bg-dark-800 px-4 py-3">
+            <span className="text-sm font-medium text-dark-300">Remaining</span>
+            <span className="text-xl font-bold text-primary-400">
+              {Math.round(caloriesToBurn)}{' '}
+              <span className="text-xs font-normal text-dark-400">kcal</span>
             </span>
-          )}
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-dark-800 px-4 py-3">
+            <Heart className="h-4 w-4 shrink-0 text-red-400" />
+            <input
+              type="number"
+              placeholder="Heart rate (BPM)"
+              min={40}
+              max={250}
+              value={heartRate ?? ''}
+              onChange={handleHeartRateChange}
+              className="h-8 w-full bg-transparent text-sm text-white placeholder:text-dark-500 focus:outline-none"
+            />
+            {heartRate && (
+              <span className="shrink-0 rounded-md bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-400">
+                HR
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Activity cards grid */}
+        {/* Activity cards */}
         <div className="stagger-children grid gap-3 sm:grid-cols-2">
-          {suggestions.map(({ activity, durationMinutes, caloriesBurned }) => {
+          {activityData.map(({ activity, calPerMin, sessions, minutesToTarget }) => {
             const isExpanded = expandedActivity === activity.id;
-
-            // Calculate cal/min for expanded view
-            const calPerMin = heartRate
-              ? caloriesPerMinuteHR(heartRate, weightKg, age, gender)
-              : caloriesPerMinuteMET(activity.metValue, weightKg);
 
             return (
               <div
@@ -149,7 +146,7 @@ export default function CardioSuggestions({
                   }
                 }}
               >
-                {/* Card content */}
+                {/* Card header */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-4xl">{activity.emoji}</span>
@@ -169,32 +166,78 @@ export default function CardioSuggestions({
                   </div>
                 </div>
 
-                {/* Duration */}
-                <div className="mt-3">
+                {/* 30-min session highlight */}
+                <div className="mt-3 flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-primary-400">
-                    {formatDuration(durationMinutes)}
+                    {sessions[0].caloriesBurned}
                   </span>
-                  <p className="mt-0.5 text-xs text-dark-400">
-                    to burn {caloriesBurned} kcal
-                  </p>
+                  <span className="text-sm text-dark-400">kcal / 30 min</span>
                 </div>
 
-                {/* Expanded detail */}
+                {/* Rate per minute */}
+                <p className="mt-1 text-xs text-dark-500">
+                  {calPerMin.toFixed(1)} kcal/min
+                </p>
+
+                {/* Expanded: session breakdown table */}
                 {isExpanded && (
-                  <div className="mt-3 flex flex-col gap-2 border-t border-dark-700 pt-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-dark-400">Calories / min</span>
-                      <span className="font-semibold text-white">
-                        {calPerMin.toFixed(1)} kcal
-                      </span>
+                  <div className="mt-3 flex flex-col gap-3 border-t border-dark-700 pt-3 animate-fade-in">
+                    {/* Session table */}
+                    <div className="space-y-1.5">
+                      {sessions.map((session) => {
+                        const coversTarget = caloriesToBurn > 0 && session.caloriesBurned >= caloriesToBurn;
+                        const isFirstCover = coversTarget && (session.minutes === 30 || sessions.find(s => s.minutes === session.minutes - 30)!.caloriesBurned < caloriesToBurn);
+
+                        return (
+                          <div
+                            key={session.minutes}
+                            className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                              isFirstCover
+                                ? 'bg-primary-500/15 ring-1 ring-primary-500/30'
+                                : 'bg-dark-900/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Timer className="h-3.5 w-3.5 text-dark-400" />
+                              <span className="text-sm font-medium text-white">
+                                {session.minutes} min
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm font-bold ${isFirstCover ? 'text-primary-400' : 'text-white'}`}>
+                                {session.caloriesBurned} kcal
+                              </span>
+                              {isFirstCover && (
+                                <span className="rounded-full bg-primary-500 px-2 py-0.5 text-[9px] font-bold text-white">
+                                  GOAL
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
+
+                    {/* Time to reach target */}
+                    {caloriesToBurn > 0 && (
+                      <div className="flex items-center justify-between rounded-lg bg-dark-900/50 px-3 py-2">
+                        <span className="text-xs text-dark-400">Time to burn {Math.round(caloriesToBurn)} kcal</span>
+                        <span className="text-sm font-bold text-primary-400">
+                          ~{minutesToTarget} min
+                        </span>
+                      </div>
+                    )}
+
+                    {/* HR zone */}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-dark-400">Heart rate zone</span>
                       <span className="font-semibold text-red-400">
                         {getHeartRateZone(activity)}
                       </span>
                     </div>
-                    <div className="mt-1 rounded-lg bg-primary-500/10 px-3 py-2">
+
+                    {/* Tip */}
+                    <div className="rounded-lg bg-primary-500/10 px-3 py-2">
                       <p className="text-xs leading-relaxed text-primary-300">
                         {getMotivationalTip(activity.id)}
                       </p>
