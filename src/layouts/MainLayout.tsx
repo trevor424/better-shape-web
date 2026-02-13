@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -6,6 +7,8 @@ import {
   TrendingUp,
   User,
   LogOut,
+  Menu,
+  X,
 } from 'lucide-react';
 
 import { useAuthStore } from '@/stores/auth-store';
@@ -27,6 +30,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const setUnauthenticated = useAuthStore((s) => s.setUnauthenticated);
   const clearUser = useUserStore((s) => s.clearUser);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function handleLogout() {
     setUnauthenticated();
@@ -36,18 +40,41 @@ export default function MainLayout() {
 
   return (
     <div className="flex min-h-screen">
+      {/* ── Overlay (mobile) ─────────────────────────────────────── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/50 transition-opacity lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ──────────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-dark-900 animate-slide-in-left">
-        {/* Logo */}
-        <div className="flex h-16 items-center gap-3 px-6">
-          <img
-            src={import.meta.env.BASE_URL + 'favicon.png'}
-            alt="BetterShape"
-            className="h-9 w-9"
-          />
-          <span className="text-xl font-bold tracking-tight text-primary-500">
-            BetterShape
-          </span>
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-dark-900
+          transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+        `}
+      >
+        {/* Logo + Close button */}
+        <div className="flex h-16 items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <img
+              src={import.meta.env.BASE_URL + 'favicon.png'}
+              alt="BetterShape"
+              className="h-9 w-9"
+            />
+            <span className="text-xl font-bold tracking-tight text-primary-500">
+              BetterShape
+            </span>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-dark-300 transition-colors hover:bg-dark-800 hover:text-white lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -57,6 +84,7 @@ export default function MainLayout() {
               key={to}
               to={to}
               end={'end' in rest ? rest.end : false}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 [
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-1',
@@ -85,9 +113,29 @@ export default function MainLayout() {
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────── */}
-      <main className="ml-64 flex-1 p-6">
-        <Outlet />
-      </main>
+      <div className="flex flex-1 flex-col lg:ml-64">
+        {/* Top bar with hamburger */}
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-dark-800 bg-dark-950/90 px-4 backdrop-blur-sm lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-dark-300 transition-colors hover:bg-dark-800 hover:text-white"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="flex items-center gap-2">
+            <img
+              src={import.meta.env.BASE_URL + 'favicon.png'}
+              alt="BetterShape"
+              className="h-7 w-7"
+            />
+            <span className="text-lg font-bold text-primary-500">BetterShape</span>
+          </div>
+        </header>
+
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
